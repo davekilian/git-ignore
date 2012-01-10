@@ -1,0 +1,63 @@
+#!/bin/bash
+#
+# git-ignore
+# Appends one or more patterns to a .gitignore file, optionally preceded by 
+# an explanatory message
+# 
+# Put this script somewhere in your $PATH (perhaps /usr/bin),
+# then cd into your working tree and run
+#   git ignore "pattern1" [pattern2] [pattern3] ... [-m "message"]
+# Patterns are added to the .gitignore file without processing
+
+if [ $# == 0 ]; then
+	echo 'Usage: git-ignore <pattern> [<pattern>...<pattern>] [-m "reason"]'
+	exit
+fi
+
+startdir="$(pwd)"
+
+# Find .gitignore
+while [ ! -d ".git" ]; do
+	local prev="$(pwd)"
+	cd ..
+	if [ "$(pwd)" == "$prev" ]
+	then
+		echo "Fatal: must be run in a valid working directory"
+		cd "$startdir"
+		exit
+	fi
+done
+
+gitignore="$(pwd)/.gitignore"
+
+# Find / echo message
+msg_next=0
+for arg in "$@"; do
+	if [ $msg_next != 0 ]; 	then
+		message="$arg"
+		break
+	elif [ "$arg" == "-m" ]; then
+		msg_next=1
+	fi
+done
+
+echo "" >> "$gitignore"
+if [ ! -z "$message" ]; then
+	echo "# $message" >> "$gitignore"
+fi
+
+# Echo patterns
+ignore=0
+for arg in "$@"; do
+	if [ $ignore != 0 ]; then
+		ignore=0
+	elif [ "$arg" == '-m' ]; then
+		ignore=1
+	else
+		echo "$arg"
+		echo "$arg" >> "$gitignore"
+	fi
+done
+
+cd $startdir
+
